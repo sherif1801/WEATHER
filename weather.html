@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather Information</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #1e3a8a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 420px;
+            padding: 35px 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+            text-align: center;
+        }
+
+        h1 {
+            color: #0f172a;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            color: #1e293b;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        }
+
+        button {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #0369a1, #1d4ed8);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #weather {
+            margin-top: 25px;
+            text-align: left;
+            animation: fadeIn 0.35s ease-in-out;
+        }
+
+        #weather h3 {
+            font-size: 17px;
+            color: #334155;
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
+
+        #weather p {
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #weather p:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        #weather p:nth-of-type(1) {
+            background-color: #fef2f2;
+            border: 1px solid #fee2e2;
+            color: #b91c1c;
+        }
+
+        #weather p:nth-of-type(2) {
+            background-color: #eff6ff;
+            border: 1px solid #dbeafe;
+            color: #1d4ed8;
+        }
+
+        #weather p:nth-of-type(3) {
+            background-color: #f0fdf4;
+            border: 1px solid #dcfce7;
+            color: #15803d;
+        }
+
+        .status-msg {
+            text-align: center;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            background-color: #f8fafc;
+            color: #64748b;
+        }
+
+        .error-msg {
+            color: #dc2626;
+            background-color: #fef2f2;
+            border: 1px solid #fee2e2;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Weather Information</h1>
+
+        <div class="search-box">
+            <input type="text" id="city" placeholder="Enter a city name" onkeydown="if(event.key === 'Enter') GetData()">
+            <button onclick="GetData()">Get Data</button>
+        </div>
+
+        <div id="weather"></div>
+
+    </div>
+
+    <script>
+
+        function GetData() {
+
+            let place = document.getElementById("city").value;
+
+            if (place.trim() === "") {
+                alert("Please enter a city name");
+                return;
+            }
+
+            document.getElementById("weather").innerHTML = `<div class="status-msg">Loading weather data...</div>`;
+
+            fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1&language=en&format=json`)
+
+            .then(response => response.json())
+
+            .then(data => {
+
+                if (!data.results || data.results.length === 0) {
+                    document.getElementById("weather").innerHTML = `<div class="status-msg error-msg">City not found</div>`;
+                    return;
+                }
+
+                let longitude = data.results[0].longitude;
+                let latitude = data.results[0].latitude;
+
+                weather_details(longitude, latitude);
+
+            })
+
+            .catch(error => {
+                console.log(error);
+                document.getElementById("weather").innerHTML = `<div class="status-msg error-msg">Failed to load data</div>`;
+            });
+        }
+
+
+        function weather_details(lo, la) {
+
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`)
+
+            .then(response => response.json())
+
+            .then(data => {
+
+                document.getElementById("weather").innerHTML = `
+
+                    <h3>Current Weather</h3>
+
+                    <p><span>Temperature</span> <span>${data.current.temperature_2m} °C</span></p>
+
+                    <p><span>Humidity</span> <span>${data.current.relative_humidity_2m} %</span></p>
+
+                    <p><span>Wind Speed</span> <span>${data.current.wind_speed_10m} km/h</span></p>
+
+                `;
+
+            })
+
+            .catch(error => {
+                console.log(error);
+                document.getElementById("weather").innerHTML = `<div class="status-msg error-msg">Failed to load weather details</div>`;
+            });
+
+        }
+
+    </script>
+
+</body>
+</html>
